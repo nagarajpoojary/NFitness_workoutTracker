@@ -1,0 +1,65 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>N Workout Tracker Pro v6.5 Ultimate</title>
+<style>
+body{font-family:Arial;background:#0f172a;color:#fff;padding:12px} .card{background:#1e293b;padding:12px;border-radius:12px;margin:10px 0}
+button,input,select{padding:8px;margin:4px;border-radius:8px} table{width:100%;border-collapse:collapse} td,th{border:1px solid #334155;padding:6px}
+.progress{background:#334155;height:18px;border-radius:10px}.bar{background:#22c55e;height:18px;width:0%}
+</style></head><body>
+<h1>🏋️ N Workout Tracker Pro v6.5 Ultimate</h1>
+
+<div class="card"><h3>📅 Live Date & Time</h3><div id="clock"></div></div>
+
+<div class="card"><h3>⏱ Workout Timer</h3><div id="timer">00:00:00</div>
+<button onclick="startWorkout()">Start</button><button onclick="pauseWorkout()">Pause</button>
+<button onclick="resumeWorkout()">Resume</button><button onclick="endWorkout()">End</button></div>
+
+<div class="card"><h3>📋 Workout & Exercise</h3>
+<select id="workout" onchange="loadWorkout()"><option>Select Workout</option><option>Back + Triceps</option><option>Chest + Biceps</option><option>Legs</option></select>
+<select id="exerciseSelect" onchange="showExercise()"><option>Select Exercise</option></select>
+<div id="exerciseCard">Choose workout</div></div>
+
+<div class="card"><h3>📸 Upload Poster</h3><input type="file" id="img" accept="image/*"><br><img id="preview" style="max-width:220px;display:none"><p>OCR-ready placeholder</p></div>
+
+<div class="card"><h3>▶️ Set Control</h3>
+<button onclick="startSet()">Start Set</button><button onclick="completeSet()">Complete Set</button>
+<div id="setStatus">Ready</div>
+<input id="weight" placeholder="Weight kg"><input id="reps" placeholder="Reps"><button onclick="saveSet()">Save Set</button>
+<table><thead><tr><th>Exercise</th><th>Set</th><th>Weight</th><th>Reps</th></tr></thead><tbody id="tbl"></tbody></table></div>
+
+<div class="card"><h3>⏳ Rest Timer + Alarm</h3>
+<label><input type="checkbox" id="autoStart">Auto Start Next Set</label><br>
+<button onclick="startRest(30)">30s</button><button onclick="startRest(45)">45s</button><button onclick="startRest(60)">60s</button><button onclick="startRest(90)">90s</button>
+<div id="rest">Ready</div></div>
+
+<div class="card"><h3>💧 Water Tracker</h3><button onclick="water++;updateWater()">+1 Glass</button><div id="water"></div></div>
+
+<div class="card"><h3>📈 Progress & PR</h3>
+<div class="progress"><div class="bar" id="bar"></div></div><div id="progressText">0%</div><div id="pr">Best Weight: 0 kg</div></div>
+
+<script>
+const workouts={"Back + Triceps":[["Lat Pulldown",4,"10-12"],["Seated Cable Row",4,"10-12"],["One-Arm Dumbbell Row",3,"10-12"],["Straight Arm Pulldown",3,"12-15"],["Back Extensions",3,"15"],["Rope Pushdown",4,"10-12"],["Overhead Rope Extension",4,"10-12"],["Single-Arm Cable Pushdown",3,"12"],["Bench Dips",3,"Failure"]],
+"Chest + Biceps":[["Bench Press",4,"8-12"],["Incline Press",4,"8-12"],["Barbell Curl",3,"10-12"]],
+"Legs":[["Squat",4,"8-12"],["Leg Press",4,"10-12"],["Leg Curl",3,"12"]]};
+function speak(t){if(window.speechSynthesis)speechSynthesis.speak(new SpeechSynthesisUtterance(t));}
+setInterval(()=>clock.innerText=new Date().toLocaleString(),1000);
+
+let st=0,el=0,intv=null;
+function upd(){let ms=el+(Date.now()-st),s=Math.floor(ms/1000);timer.innerText=String(Math.floor(s/3600)).padStart(2,'0')+":"+String(Math.floor((s%3600)/60)).padStart(2,'0')+":"+String(s%60).padStart(2,'0');}
+function startWorkout(){st=Date.now();clearInterval(intv);intv=setInterval(upd,1000);speak("Workout Started");}
+function pauseWorkout(){el+=Date.now()-st;clearInterval(intv);}
+function resumeWorkout(){st=Date.now();intv=setInterval(upd,1000);}
+function endWorkout(){clearInterval(intv);speak("Workout Completed");}
+
+let current=null,setNo=1,count=0;
+function loadWorkout(){exerciseSelect.innerHTML='<option>Select Exercise</option>';let w=workout.value;if(workouts[w]) workouts[w].forEach(e=>exerciseSelect.innerHTML+=`<option>${e[0]}</option>`);}
+function showExercise(){let a=workouts[workout.value].find(x=>x[0]==exerciseSelect.value); current=a; setNo=1; exerciseCard.innerHTML=`<b>${a[0]}</b><br>Sets:${a[1]} Reps:${a[2]}<br>Current Set:${setNo}`;}
+function startSet(){setStatus.innerText="Set "+setNo+" Started";speak("Start Set");}
+function completeSet(){setStatus.innerText="Set "+setNo+" Completed";speak("Set Complete");setNo++; if(current) exerciseCard.innerHTML=`<b>${current[0]}</b><br>Sets:${current[1]} Reps:${current[2]}<br>Current Set:${setNo}`;}
+function saveSet(){tbl.innerHTML+=`<tr><td>${current?current[0]:"Exercise"}</td><td>${setNo-1}</td><td>${weight.value}</td><td>${reps.value}</td></tr>`;localStorage.setItem("v65",tbl.innerHTML);count++;let p=Math.min(count*5,100);bar.style.width=p+"%";progressText.innerText=p+"%";let best=+localStorage.getItem("pr65")||0;if(+weight.value>best){localStorage.setItem("pr65",weight.value);pr.innerText="Best Weight: "+weight.value+" kg";}}
+tbl.innerHTML=localStorage.getItem("v65")||"";pr.innerText="Best Weight: "+(localStorage.getItem("pr65")||0)+" kg";
+
+function startRest(sec){let t=sec;speak("Rest Started");let x=setInterval(()=>{rest.innerText="Remaining: "+t+" sec";t--;if(t<0){clearInterval(x);rest.innerText="🔥 START NEXT SET";try{new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg').play()}catch(e){};if(navigator.vibrate)navigator.vibrate([500,300,500]);speak("Rest complete. Start next set");if(autoStart.checked)speak("Starting next set");}},1000);}
+
+let water=0;function updateWater(){water.innerText="Glasses: "+window.water;} updateWater();
+img.addEventListener('change',e=>{let f=e.target.files[0];if(f){preview.src=URL.createObjectURL(f);preview.style.display='block';}});
+</script></body></html>
